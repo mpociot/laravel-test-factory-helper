@@ -61,4 +61,4 @@ By default, the command will only append new models and doesn't modify the exist
 
 ### License
 
-The Laravel IDE Helper Generator is free software licensed under the MIT license.
+The Laravel Test Factory Helper is free software licensed under the MIT license.
