@@ -1,7 +1,5 @@
 ## Laravel Test Factory Generator
 
-### Complete phpDocs, directly from the source
-
 `php artisan test-factory-helper:generate`
 
 This package helps you generate model factories from your existing models / database structure to get started with testing your Laravel application even faster.
