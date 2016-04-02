@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Str;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -185,6 +186,8 @@ class GenerateCommand extends Command
 
                     $this->getPropertiesFromTable($model);
 
+                    $this->getPropertiesFromMethods($model);
+
                     $output .= $this->createFactory($name);
                     $ignore[] = $name;
                 } catch (\Exception $e) {
@@ -256,6 +259,49 @@ class GenerateCommand extends Command
         }
     }
 
+
+    /**
+     * @param \Illuminate\Database\Eloquent\Model $model
+     */
+    protected function getPropertiesFromMethods($model)
+    {
+        $methods = get_class_methods($model);
+        if ($methods) {
+            foreach ($methods as $method) {
+                if (!method_exists('Illuminate\Database\Eloquent\Model', $method) && !Str::startsWith($method, 'get')) {
+                    //Use reflection to inspect the code, based on Illuminate/Support/SerializableClosure.php
+                    $reflection = new \ReflectionMethod($model, $method);
+                    $file = new \SplFileObject($reflection->getFileName());
+                    $file->seek($reflection->getStartLine() - 1);
+                    $code = '';
+                    while ($file->key() < $reflection->getEndLine()) {
+                        $code .= $file->current();
+                        $file->next();
+                    }
+                    $code = trim(preg_replace('/\s\s+/', '', $code));
+                    $begin = strpos($code, 'function(');
+                    $code = substr($code, $begin, strrpos($code, '}') - $begin + 1);
+                    foreach (array(
+                                 'belongsTo',
+                             ) as $relation) {
+                        $search = '$this->' . $relation . '(';
+                        if ($pos = stripos($code, $search)) {
+                            //Resolve the relation's model to a Relation object.
+                            $relationObj = $model->$method();
+                            if ($relationObj instanceof Relation) {
+                                $relatedModel = '\\' . get_class($relationObj->getRelated());
+                                $relatedObj = new $relatedModel;
+
+                                $property = $relationObj->getForeignKey();
+                                $this->setProperty($property,'factory('.get_class($relationObj->getRelated()).'::class)->create()->'.$relatedObj->getKeyName());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * @param string $name
      * @param string|null $type
@@ -269,6 +315,10 @@ class GenerateCommand extends Command
         }
         if ($type !== null) {
             $this->properties[$name]['type'] = $type;
+        }
+
+        if (Str::startsWith($type,'factory(')) {
+            $this->properties[$name]['faker'] = true;
         }
 
         $fakeableTypes = [
