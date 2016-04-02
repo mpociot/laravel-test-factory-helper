@@ -240,7 +240,7 @@ class GenerateCommand extends Command
             foreach ($columns as $column) {
                 $name = $column->getName();
                 if (in_array($name, $model->getDates())) {
-                    $type = '\Carbon\Carbon';
+                    $type = 'datetime';
                 } else {
                     $type = $column->getType()->getName();
                 }
@@ -248,7 +248,9 @@ class GenerateCommand extends Command
                     $name !== $model::CREATED_AT &&
                     $name !== $model::UPDATED_AT
                 ) {
-                    $this->setProperty($name, $type);
+                    if(!method_exists($model,'getDeletedAtColumn') || (method_exists($model,'getDeletedAtColumn') && $name !== $model->getDeletedAtColumn())) {
+                        $this->setProperty($name, $type);
+                    }
                 }
             }
         }
