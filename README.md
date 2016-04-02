@@ -6,7 +6,7 @@ This package helps you generate model factories from your existing models / data
 
 ### Example output
 
-#### Migration
+#### Migration and Model
 ```php
 Schema::create('users', function (Blueprint $table) {
     $table->increments('id');
@@ -14,9 +14,17 @@ Schema::create('users', function (Blueprint $table) {
     $table->string('username');
     $table->string('email')->unique();
     $table->string('password', 60);
+    $table->integer('company_id');
     $table->rememberToken();
     $table->timestamps();
 });
+
+class User extends Model {
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
+    }
+}
 ```
 
 #### Factory Result
@@ -28,6 +36,7 @@ $factory->define(App\User::class, function (Faker\Generator $faker) {
         'username' =>  $faker->userName ,
         'email' =>  $faker->safeEmail ,
         'password' =>  bcrypt($faker->password) ,
+        'company_id' =>  factory(App\Company::class)->create()->id ,
         'remember_token' =>  str_random(10) ,
     ];
 });
