@@ -144,7 +144,7 @@ class GenerateCommand extends Command
             }
         }
 
-        $output = $this->reset ? '<?php'."\n\n" : $this->existingFactories;
+        $output = ($this->reset || !$this->files->exists('database/factories/ModelFactory.php')) ? '<?php'."\n\n" : $this->existingFactories;
         $ignore = explode(',', $ignore);
 
         foreach ($models as $name) {
