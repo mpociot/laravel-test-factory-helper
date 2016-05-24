@@ -293,7 +293,9 @@ class GenerateCommand extends Command
                                 $relatedObj = new $relatedModel;
 
                                 $property = $relationObj->getForeignKey();
-                                $this->setProperty($property,'factory('.get_class($relationObj->getRelated()).'::class)->create()->'.$relatedObj->getKeyName());
+                                $this->setProperty($property,'function () {
+             return factory('.get_class($relationObj->getRelated()).'::class)->create()->'.$relatedObj->getKeyName().';
+        }');
                             }
                         }
                     }
@@ -317,7 +319,7 @@ class GenerateCommand extends Command
             $this->properties[$name]['type'] = $type;
         }
 
-        if (Str::startsWith($type,'factory(')) {
+        if (Str::startsWith($type,'function ()')) {
             $this->properties[$name]['faker'] = true;
         }
 
