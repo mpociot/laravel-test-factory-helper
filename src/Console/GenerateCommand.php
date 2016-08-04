@@ -363,6 +363,8 @@ class GenerateCommand extends Command
             'password' => 'bcrypt($faker->password)',
             'url' => '$faker->url',
             'remember_token' => 'str_random(10)',
+            'uuid' => '$faker->uuid',
+            'guid' => '$faker->uuid',
         ];
 
         if (isset($fakeableNames[$name])) {
