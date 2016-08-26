@@ -8,7 +8,7 @@
         "illuminate/support": "5.0.x|5.1.x|5.2.x|5.3.x",
         "illuminate/console": "5.0.x|5.1.x|5.2.x|5.3.x",
         "illuminate/filesystem": "5.0.x|5.1.x|5.2.x|5.3.x",
-        "symfony/class-loader": "dev-master",
+        "symfony/class-loader": "^2.3|3.*",
         "doctrine/dbal": "~2.3"
     },
     "autoload": {
