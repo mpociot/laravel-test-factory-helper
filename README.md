@@ -32,12 +32,12 @@ class User extends Model {
 ```php
 $factory->define(App\User::class, function (Faker\Generator $faker) {
     return [
-        'name' =>  $faker->name ,
-        'username' =>  $faker->userName ,
-        'email' =>  $faker->safeEmail ,
-        'password' =>  bcrypt($faker->password) ,
-        'company_id' =>  factory(App\Company::class)->create()->id ,
-        'remember_token' =>  str_random(10) ,
+        'name' => $faker->name,
+        'username' => $faker->userName,
+        'email' => $faker->safeEmail,
+        'password' => bcrypt($faker->password),
+        'company_id' => factory(App\Company::class)->create()->id,
+        'remember_token' => str_random(10),
     ];
 });
 ```
