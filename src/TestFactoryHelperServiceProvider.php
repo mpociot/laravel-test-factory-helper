@@ -33,7 +33,7 @@ class TestFactoryHelperServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app['command.test-factory-helper.generate'] = $this->app->share(
+        $this->app->bind('command.test-factory-helper.generate',
             function ($app) {
                 return new GenerateCommand($app['files'], $app['view']);
             }
