@@ -81,7 +81,7 @@ class GenerateCommand extends Command
      *
      * @return void
      */
-    public function fire()
+    public function handle()
     {
         $filename = $this->option('filename');
         $this->dirs = $this->option('dir');
