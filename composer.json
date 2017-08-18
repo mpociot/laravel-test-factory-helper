@@ -15,5 +15,12 @@
         "psr-4": {
             "Mpociot\\LaravelTestFactoryHelper\\": "src/"
         }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Mpociot\\LaravelTestFactoryHelper\\TestFactoryHelperServiceProvider"
+            ]
+        }
     }
 }
