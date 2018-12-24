@@ -29,7 +29,12 @@ class GenerateCommand extends Command
     /**
      * @var string
      */
-    protected $filename = 'database/factories/ModelFactory.php';
+    protected $filenameBase = 'database/factories/';
+
+    /**
+     * @var string
+     */
+    protected $filename = 'ModelFactory.php';
 
     /**
      * @var string
@@ -90,18 +95,18 @@ class GenerateCommand extends Command
         $this->reset = $this->option('reset');
 
         try {
-            $this->existingFactories = $this->files->get($filename);
+            $this->existingFactories = $this->files->get($this->filenameBase . $filename);
         } catch (FileNotFoundException $e) {
             $this->existingFactories = '';
         }
 
         $result = $this->generateFactories($model, $ignore);
 
-        $written = $this->files->put('database/factories/ModelFactory.php', $result);
+        $written = $this->files->put($this->filenameBase . $filename, $result);
         if ($written !== false) {
-            $this->info("Model factories were written successfully to ".$filename);
+            $this->info("Model factories were written successfully to ".$this->filenameBase . $filename);
         } else {
-            $this->error("Failed to write model factories to ".$filename);
+            $this->error("Failed to write model factories to ".$this->filenameBase . $filename);
         }
     }
 
