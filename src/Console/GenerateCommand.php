@@ -291,8 +291,9 @@ class GenerateCommand extends Command
                             if ($relationObj instanceof Relation) {
                                 $relatedModel = '\\' . get_class($relationObj->getRelated());
                                 $relatedObj = new $relatedModel;
-
-                                $property = $relationObj->getForeignKey();
+                                
+                                //Change to achieve Laravel 5.8 Compatibility https://laravel.com/docs/5.8/upgrade
+                                $property = $relationObj->getForeignKeyName();
                                 $this->setProperty($property,'function () {
              return factory('.get_class($relationObj->getRelated()).'::class)->create()->'.$relatedObj->getKeyName().';
         }');
