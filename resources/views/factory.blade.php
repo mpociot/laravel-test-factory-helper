@@ -1,9 +1,11 @@
+/* @@var $factory \Illuminate\Database\Eloquent\Factory */
 
-$factory->define({{$reflection->getName()}}::class, function (Faker\Generator $faker) {
+use Faker\Generator as Faker;
+
+$factory->define({{ $reflection->getName() }}::class, function (Faker $faker) {
     return [
 @foreach($properties as $name => $property)
-        '{{$name}}' => @if($property['faker']){!!$property['type']!!}@else'{{$property['type']}}'@endif,
+        '{{$name}}' => {!! $property !!},
 @endforeach
     ];
 });
-

@@ -1,8 +1,8 @@
 ## Laravel Test Factory Generator
 
-`php artisan test-factory-helper:generate`
+`php artisan generate:model-factory`
 
-This package helps you generate model factories from your existing models / database structure to get started with testing your Laravel application even faster.
+This package will generate [factories](https://laravel.com/docs/master/database-testing#writing-factories) from your existing models so you can get started with testing your Laravel application more quickly.
 
 ### Example output
 
@@ -37,7 +37,7 @@ $factory->define(App\User::class, function (Faker\Generator $faker) {
         'email' => $faker->safeEmail,
         'password' => bcrypt($faker->password),
         'company_id' => factory(App\Company::class)->create()->id,
-        'remember_token' => str_random(10),
+        'remember_token' => Str::random(10),
     ];
 });
 ```
@@ -48,25 +48,24 @@ $factory->define(App\User::class, function (Faker\Generator $faker) {
 Require this package with composer using the following command:
 
 ```bash
-composer require mpociot/laravel-test-factory-helper
-```
-Go to your `config/app.php` and add the service provider:
-
-```php
-Mpociot\LaravelTestFactoryHelper\TestFactoryHelperServiceProvider::class
+composer require --dev mpociot/laravel-test-factory-helper
 ```
 
 ### Usage
 
-Just call the artisan command:
+To generate multiple factories at once, run the artisan command:
 
-`php artisan test-factory-helper:generate`
+`php artisan generate:model-factory`
 
-This command will look for all models in your "app" folder (configurable by using the `--dir` option) and create test factories and save them in your `database/factories/ModelFactory.php`.
+This command will find all models within your application and create test factories. By default, this will not overwrite any existing model factories. You can _force_ overwriting existing model factories by using the `--force` option.
 
-The output filename is also configurable by using the `--filename` option.
+To generate a factory for specific model or models, run the artisan command:
 
-By default, the command will only append new models and doesn't modify the existing content of your factories file. To rewrite the file, use the `--reset` option.
+`php artisan generate:model-factory User Team`
+
+By default, this command will search under the `app` folder for models. If your models are within a different folder, for example `app/Models`, you can specify this using `--dir` option. In this case, run the artisan command:
+
+`php artisan generate:model-factory --dir app/Models -- User Team`
 
 ### License
 
