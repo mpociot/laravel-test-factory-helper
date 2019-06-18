@@ -37,7 +37,7 @@ class GenerateCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Generate test factories for models';
+    protected $description = 'Generate database test factories for models';
 
     /**
      * @var string
@@ -48,11 +48,6 @@ class GenerateCommand extends Command
      * @var array
      */
     protected $properties = array();
-
-    /**
-     * @var array
-     */
-    protected $dirs = array();
 
     /**
      * @var
@@ -125,10 +120,10 @@ class GenerateCommand extends Command
      */
     protected function getOptions()
     {
-        return array(
-            array('dir', 'D', InputOption::VALUE_OPTIONAL, 'The model directory', array($this->dir)),
-            array('force', 'F', InputOption::VALUE_NONE, 'Overwrite any existing model factory'),
-        );
+        return [
+            ['dir', 'D', InputOption::VALUE_OPTIONAL, 'The model directory', $this->dir],
+            ['force', 'F', InputOption::VALUE_NONE, 'Overwrite any existing model factory'],
+        ];
     }
 
     protected function generateFactory($model)
