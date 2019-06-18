@@ -337,6 +337,7 @@ class GenerateCommand extends Command
             'username' => '$faker->userName',
             'user_name' => '$faker->userName',
             'password' => 'bcrypt($faker->password)',
+            'slug' => '$faker->slug',
             'url' => '$faker->url',
             'remember_token' => 'Str::random(10)',
             'uuid' => '$faker->uuid',
