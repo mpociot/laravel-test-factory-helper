@@ -291,11 +291,8 @@ class GenerateCommand extends Command
                             if ($relationObj instanceof Relation) {
                                 $relatedModel = '\\' . get_class($relationObj->getRelated());
                                 $relatedObj = new $relatedModel;
-
-                                $property = $relationObj->getForeignKey();
-                                $this->setProperty($property,'function () {
-             return factory('.get_class($relationObj->getRelated()).'::class)->create()->'.$relatedObj->getKeyName().';
-        }');
+                                $property = $relationObj->getForeignKeyName();
+                                $this->setProperty($property, 'factory(' . get_class($relationObj->getRelated()) . '::class)->create()->' . $relatedObj->getKeyName());
                             }
                         }
                     }
@@ -362,7 +359,7 @@ class GenerateCommand extends Command
             'user_name' => '$faker->userName',
             'password' => 'bcrypt($faker->password)',
             'url' => '$faker->url',
-            'remember_token' => 'str_random(10)',
+            'remember_token' => 'Str::random(10)',
             'uuid' => '$faker->uuid',
             'guid' => '$faker->uuid',
         ];
