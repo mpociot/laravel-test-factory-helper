@@ -3,14 +3,13 @@
 namespace Mpociot\LaravelTestFactoryHelper\Console;
 
 use Illuminate\Console\Command;
-use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Str;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\ClassLoader\ClassMapGenerator;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
 
 class GenerateCommand extends Command
 {
@@ -25,11 +24,6 @@ class GenerateCommand extends Command
      * @var string
      */
     protected $name = 'test-factory-helper:generate';
-
-    /**
-     * @var string
-     */
-    protected $filename = 'database/factories/ModelFactory.php';
 
     /**
      * @var string
@@ -64,7 +58,7 @@ class GenerateCommand extends Command
     /**
      * @var
      */
-    protected $reset;
+    protected $force;
 
     /**
      * @param Filesystem $files
@@ -83,25 +77,32 @@ class GenerateCommand extends Command
      */
     public function handle()
     {
-        $filename = $this->option('filename');
-        $this->dirs = $this->option('dir');
-        $model = $this->argument('model');
-        $ignore = $this->option('ignore');
-        $this->reset = $this->option('reset');
+        $this->dir = $this->option('dir');
+        $this->force = $this->option('force');
 
-        try {
-            $this->existingFactories = $this->files->get($filename);
-        } catch (FileNotFoundException $e) {
-            $this->existingFactories = '';
-        }
+        $models = $this->loadModels($this->argument('model'));
 
-        $result = $this->generateFactories($model, $ignore);
+        foreach ($models as $model) {
+            $filename = 'database/factories/' . class_basename($model) . 'Factory.php';
 
-        $written = $this->files->put('database/factories/ModelFactory.php', $result);
-        if ($written !== false) {
-            $this->info("Model factories were written successfully to ".$filename);
-        } else {
-            $this->error("Failed to write model factories to ".$filename);
+            if ($this->files->exists($filename) && !$this->force) {
+                $this->warn('Model factory exists, use --force to overwrite: ' . $filename);
+
+                continue;
+            }
+
+            $result = $this->generateFactory($model);
+
+            if ($result === false) {
+                continue;
+            }
+
+            $written = $this->files->put($filename, $result);
+            if ($written !== false) {
+                $this->info('Model factory created: ' . $filename);
+            } else {
+                $this->error('Failed to create model factory: ' . $filename);
+            }
         }
     }
 
@@ -126,92 +127,77 @@ class GenerateCommand extends Command
     protected function getOptions()
     {
         return array(
-            array('filename', 'F', InputOption::VALUE_OPTIONAL, 'The path to the model factory file', $this->filename),
-            array('dir', 'D', InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'The model dir', array($this->dir)),
-            array('reset', 'R', InputOption::VALUE_NONE, 'Remove the original ModelFactory instead of appending'),
-            array('ignore', 'I', InputOption::VALUE_OPTIONAL, 'Which models to ignore', ''),
+            array('dir', 'D', InputOption::VALUE_OPTIONAL, 'The model directory', array($this->dir)),
+            array('force', 'F', InputOption::VALUE_NONE, 'Overwrite any existing model factory'),
         );
     }
 
-    protected function generateFactories($loadModels, $ignore = '')
+    protected function generateFactory($model)
     {
+        $output = '<?php' . "\n\n";
 
-        if (empty($loadModels)) {
-            $models = $this->loadModels();
-        } else {
-            $models = array();
-            foreach ($loadModels as $model) {
-                $models = array_merge($models, explode(',', $model));
+        $this->properties = [];
+        if (!class_exists($model)) {
+            if ($this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
+                $this->error("Unable to find '$model' class");
             }
+            return false;
         }
 
-        $output = ($this->reset || !$this->files->exists('database/factories/ModelFactory.php')) ? '<?php'."\n\n" : $this->existingFactories;
-        $ignore = explode(',', $ignore);
+        try {
+            // handle abstract classes, interfaces, ...
+            $reflectionClass = new \ReflectionClass($model);
 
-        foreach ($models as $name) {
-            if (in_array($name, $ignore)) {
-                if ($this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
-                    $this->comment("Ignoring model '$name'");
-                }
-                continue;
+            if (!$reflectionClass->isSubclassOf('Illuminate\Database\Eloquent\Model')) {
+                return false;
             }
 
-            $this->properties = array();
-            if (class_exists($name)) {
-                try {
-                    // handle abstract classes, interfaces, ...
-                    $reflectionClass = new \ReflectionClass($name);
-
-                    if (!$reflectionClass->isSubclassOf('Illuminate\Database\Eloquent\Model')) {
-                        continue;
-                    }
-
-                    if (!$this->reset && preg_match("/\\\$factory->define\((.*?)".preg_quote($reflectionClass->getName())."::class(.*?),/", $this->existingFactories)) {
-                        if ($this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
-                            $this->error("Model '$name' already has a factory");
-                        }
-                        continue;
-                    }
-
-                    if ($this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
-                        $this->comment("Loading model '$name'");
-                    }
-
-                    if (!$reflectionClass->IsInstantiable()) {
-                        // ignore abstract class or interface
-                        continue;
-                    }
-
-                    $model = $this->laravel->make($name);
-
-                    $this->getPropertiesFromTable($model);
-
-                    $this->getPropertiesFromMethods($model);
-
-                    $output .= $this->createFactory($name);
-                    $ignore[] = $name;
-                } catch (\Exception $e) {
-                    $this->error("Exception: " . $e->getMessage() . "\nCould not analyze class $name.");
-                }
+            if ($this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
+                $this->comment("Loading model '$model'");
             }
 
+            if (!$reflectionClass->IsInstantiable()) {
+                // ignore abstract class or interface
+                return false;
+            }
+
+            $model = $this->laravel->make($model);
+
+            $this->getPropertiesFromTable($model);
+            $this->getPropertiesFromMethods($model);
+
+            $output .= $this->createFactory($model);
+        } catch (\Exception $e) {
+            $this->error("Exception: " . $e->getMessage() . "\nCould not analyze class $model.");
         }
+
         return $output;
     }
 
 
-    protected function loadModels()
+    protected function loadModels($models = [])
     {
-        $models = array();
-        foreach ($this->dirs as $dir) {
-            $dir = base_path() . '/' . $dir;
-            if (file_exists($dir)) {
-                foreach (ClassMapGenerator::createMap($dir) as $model => $path) {
-                    $models[] = $model;
+        if (!empty($models)) {
+            return array_map(function ($name) {
+                if (strpos($name, '\\') !== false) {
+                    return $name;
                 }
-            }
+
+                return str_replace(
+                    [DIRECTORY_SEPARATOR, basename($this->laravel->path()) . '\\'],
+                    ['\\', $this->laravel->getNamespace()],
+                    $this->dir . DIRECTORY_SEPARATOR . $name
+                );
+            }, $models);
         }
-        return $models;
+
+
+        $dir = base_path($this->dir);
+        if (!file_exists($dir)) {
+            return [];
+        }
+
+        return array_keys(ClassMapGenerator::createMap($dir));
     }
 
     /**
@@ -251,7 +237,7 @@ class GenerateCommand extends Command
                     $name !== $model::CREATED_AT &&
                     $name !== $model::UPDATED_AT
                 ) {
-                    if(!method_exists($model,'getDeletedAtColumn') || (method_exists($model,'getDeletedAtColumn') && $name !== $model->getDeletedAtColumn())) {
+                    if (!method_exists($model, 'getDeletedAtColumn') || (method_exists($model, 'getDeletedAtColumn') && $name !== $model->getDeletedAtColumn())) {
                         $this->setProperty($name, $type);
                     }
                 }
@@ -307,17 +293,10 @@ class GenerateCommand extends Command
      */
     protected function setProperty($name, $type = null)
     {
-        if (!isset($this->properties[$name])) {
-            $this->properties[$name] = array();
-            $this->properties[$name]['type'] = 'mixed';
-            $this->properties[$name]['faker'] = false;
-        }
-        if ($type !== null) {
-            $this->properties[$name]['type'] = $type;
-        }
+        if ($type !== null && Str::startsWith($type, 'factory(')) {
+            $this->properties[$name] = $type;
 
-        if (Str::startsWith($type,'function ()')) {
-            $this->properties[$name]['faker'] = true;
+            return;
         }
 
         $fakeableTypes = [
@@ -365,13 +344,11 @@ class GenerateCommand extends Command
         ];
 
         if (isset($fakeableNames[$name])) {
-            $this->properties[$name]['faker'] = true;
-            $this->properties[$name]['type'] = $fakeableNames[$name];
+            $this->properties[$name] = $fakeableNames[$name];
         }
 
-        if (isset($fakeableTypes[$type]) && !$this->properties[$name]['faker']) {
-            $this->properties[$name]['faker'] = true;
-            $this->properties[$name]['type'] = $fakeableTypes[$type];
+        if (isset($fakeableTypes[$type])) {
+            $this->properties[$name] = $fakeableTypes[$type];
         }
     }
 
