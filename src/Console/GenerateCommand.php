@@ -22,7 +22,7 @@ class GenerateCommand extends Command
      *
      * @var string
      */
-    protected $name = 'test-factory-helper:generate';
+    protected $name = 'generate:model-factory';
 
     /**
      * @var string

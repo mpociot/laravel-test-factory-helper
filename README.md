@@ -1,6 +1,6 @@
 ## Laravel Test Factory Generator
 
-`php artisan test-factory-helper:generate`
+`php artisan generate:model-factory`
 
 This package helps you generate model factories from your existing models / database structure to get started with testing your Laravel application even faster.
 
@@ -60,7 +60,7 @@ Mpociot\LaravelTestFactoryHelper\TestFactoryHelperServiceProvider::class
 
 Just call the artisan command:
 
-`php artisan test-factory-helper:generate`
+`php artisan generate:model-factory`
 
 This command will look for all models in your "app" folder (configurable by using the `--dir` option) and create test factories and save them in your `database/factories/ModelFactory.php`.
 
