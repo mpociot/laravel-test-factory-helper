@@ -6,7 +6,6 @@ use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Str;
-use Symfony\Component\ClassLoader\ClassMapGenerator;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -197,7 +196,13 @@ class GenerateCommand extends Command
             return [];
         }
 
-        return array_keys(ClassMapGenerator::createMap($dir));
+        return array_map(function (\SplFIleInfo $file) {
+            return str_replace(
+                [DIRECTORY_SEPARATOR, basename($this->laravel->path()) . '\\'],
+                ['\\', $this->laravel->getNamespace()],
+                $file->getPath() . DIRECTORY_SEPARATOR . basename($file->getFilename(), '.php')
+            );
+        }, $this->files->allFiles($this->dir));
     }
 
     /**
