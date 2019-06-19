@@ -3,6 +3,7 @@
 namespace Mpociot\LaravelTestFactoryHelper\Console;
 
 use Illuminate\Console\Command;
+use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Str;
@@ -56,8 +57,9 @@ class GenerateCommand extends Command
 
     /**
      * @param Filesystem $files
+     * @param ViewFactory $view
      */
-    public function __construct(Filesystem $files, $view)
+    public function __construct(Filesystem $files, ViewFactory $view)
     {
         parent::__construct();
         $this->files = $files;
