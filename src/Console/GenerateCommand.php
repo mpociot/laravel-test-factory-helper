@@ -316,41 +316,49 @@ class GenerateCommand extends Command
         ];
 
         $fakeableNames = [
-            'name' => '$faker->name',
-            'firstname' => '$faker->firstName',
-            'first_name' => '$faker->firstName',
-            'lastname' => '$faker->lastName',
-            'last_name' => '$faker->lastName',
-            'street' => '$faker->streetName',
-            'zip' => '$faker->postcode',
-            'postcode' => '$faker->postcode',
             'city' => '$faker->city',
+            'company' => '$faker->company',
             'country' => '$faker->country',
-            'latitude' => '$faker->latitude',
+            'description' => '$faker->text',
+            'email' => '$faker->safeEmail',
+            'first_name' => '$faker->firstName',
+            'firstname' => '$faker->firstName',
+            'guid' => '$faker->uuid',
+            'last_name' => '$faker->lastName',
+            'lastname' => '$faker->lastName',
             'lat' => '$faker->latitude',
-            'longitude' => '$faker->longitude',
+            'latitude' => '$faker->latitude',
             'lng' => '$faker->longitude',
+            'longitude' => '$faker->longitude',
+            'name' => '$faker->name',
+            'password' => 'bcrypt($faker->password)',
             'phone' => '$faker->phoneNumber',
             'phone_numer' => '$faker->phoneNumber',
-            'company' => '$faker->company',
-            'email' => '$faker->safeEmail',
-            'username' => '$faker->userName',
-            'user_name' => '$faker->userName',
-            'password' => 'bcrypt($faker->password)',
-            'slug' => '$faker->slug',
-            'url' => '$faker->url',
+            'postcode' => '$faker->postcode',
             'remember_token' => 'Str::random(10)',
+            'slug' => '$faker->slug',
+            'street' => '$faker->streetName',
+            'summary' => '$faker->text',
+            'url' => '$faker->url',
+            'user_name' => '$faker->userName',
+            'username' => '$faker->userName',
             'uuid' => '$faker->uuid',
-            'guid' => '$faker->uuid',
+            'zip' => '$faker->postcode',
         ];
 
         if (isset($fakeableNames[$name])) {
             $this->properties[$name] = $fakeableNames[$name];
+
+            return;
         }
 
         if (isset($fakeableTypes[$type])) {
             $this->properties[$name] = $fakeableTypes[$type];
+
+            return;
         }
+
+        $this->properties[$name] = '$faker->word';
     }
 
 
