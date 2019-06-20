@@ -3,6 +3,7 @@
 namespace Mpociot\LaravelTestFactoryHelper\Console;
 
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Str;
@@ -10,6 +11,11 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+/**
+ * Generate database test factories for models
+ * Class GenerateCommand
+ * @package Mpociot\LaravelTestFactoryHelper\Console
+ */
 class GenerateCommand extends Command
 {
     /**
@@ -29,7 +35,9 @@ class GenerateCommand extends Command
      */
     protected $dir = 'app';
 
-    /** @var \Illuminate\Contracts\View\Factory */
+    /**
+     * @var \Illuminate\Contracts\View\Factory
+     */
     protected $view;
 
     /**
@@ -47,15 +55,16 @@ class GenerateCommand extends Command
     /**
      * @var array
      */
-    protected $properties = array();
+    protected $properties = [];
 
     /**
-     * @var
+     * @var string
      */
-    protected $force;
+    protected $force = '';
 
     /**
      * @param Filesystem $files
+     * @param $view
      */
     public function __construct(Filesystem $files, $view)
     {
@@ -69,7 +78,7 @@ class GenerateCommand extends Command
      *
      * @return void
      */
-    public function handle()
+    public function handle(): void
     {
         $this->dir = $this->option('dir');
         $this->force = $this->option('force');
@@ -80,7 +89,7 @@ class GenerateCommand extends Command
             $filename = 'database/factories/' . class_basename($model) . 'Factory.php';
 
             if ($this->files->exists($filename) && !$this->force) {
-                $this->warn('Model factory exists, use --force to overwrite: ' . $filename);
+                $this->warn("Model factory exists, use --force to overwrite: $filename");
 
                 continue;
             }
@@ -93,40 +102,52 @@ class GenerateCommand extends Command
 
             $written = $this->files->put($filename, $result);
             if ($written !== false) {
-                $this->info('Model factory created: ' . $filename);
+                $this->info("Model factory created: $filename");
             } else {
-                $this->error('Failed to create model factory: ' . $filename);
+                $this->error("Failed to create model factory: $filename");
             }
         }
     }
 
-
     /**
-     * Get the console command arguments.
-     *
-     * @return array
+     * @param array $models
+     * @return mixed
      */
-    protected function getArguments()
+    protected function loadModels(array $models = [])
     {
-        return array(
-            array('model', InputArgument::OPTIONAL | InputArgument::IS_ARRAY, 'Which models to include', array()),
-        );
+        if (!empty($models)) {
+            return array_map(function ($name) {
+                if (strpos($name, '\\') !== false) {
+                    return $name;
+                }
+
+                return str_replace(
+                    [DIRECTORY_SEPARATOR, basename($this->laravel->path()) . '\\'],
+                    ['\\', $this->laravel->getNamespace()],
+                    $this->dir . DIRECTORY_SEPARATOR . $name
+                );
+            }, $models);
+        }
+
+
+        $dir = base_path($this->dir);
+        if (!file_exists($dir)) {
+            return [];
+        }
+
+        return array_map(function (\SplFIleInfo $file) {
+            return str_replace(
+                [DIRECTORY_SEPARATOR, basename($this->laravel->path()) . '\\'],
+                ['\\', $this->laravel->getNamespace()],
+                $file->getPath() . DIRECTORY_SEPARATOR . basename($file->getFilename(), '.php')
+            );
+        }, $this->files->allFiles($this->dir));
     }
 
     /**
-     * Get the console command options.
-     *
-     * @return array
+     * @param \Illuminate\Database\Eloquent\Model $model
      */
-    protected function getOptions()
-    {
-        return [
-            ['dir', 'D', InputOption::VALUE_OPTIONAL, 'The model directory', $this->dir],
-            ['force', 'F', InputOption::VALUE_NONE, 'Overwrite any existing model factory'],
-        ];
-    }
-
-    protected function generateFactory($model)
+    protected function generateFactory(Model $model)
     {
         $output = '<?php' . "\n\n";
 
@@ -168,44 +189,12 @@ class GenerateCommand extends Command
         return $output;
     }
 
-
-    protected function loadModels($models = [])
-    {
-        if (!empty($models)) {
-            return array_map(function ($name) {
-                if (strpos($name, '\\') !== false) {
-                    return $name;
-                }
-
-                return str_replace(
-                    [DIRECTORY_SEPARATOR, basename($this->laravel->path()) . '\\'],
-                    ['\\', $this->laravel->getNamespace()],
-                    $this->dir . DIRECTORY_SEPARATOR . $name
-                );
-            }, $models);
-        }
-
-
-        $dir = base_path($this->dir);
-        if (!file_exists($dir)) {
-            return [];
-        }
-
-        return array_map(function (\SplFIleInfo $file) {
-            return str_replace(
-                [DIRECTORY_SEPARATOR, basename($this->laravel->path()) . '\\'],
-                ['\\', $this->laravel->getNamespace()],
-                $file->getPath() . DIRECTORY_SEPARATOR . basename($file->getFilename(), '.php')
-            );
-        }, $this->files->allFiles($this->dir));
-    }
-
     /**
      * Load the properties from the database table.
-     *
      * @param \Illuminate\Database\Eloquent\Model $model
+     * @throws \Doctrine\DBAL\DBALException
      */
-    protected function getPropertiesFromTable($model)
+    protected function getPropertiesFromTable(Model $model): void
     {
         $table = $model->getConnection()->getTablePrefix() . $model->getTable();
         $schema = $model->getConnection()->getDoctrineSchemaManager($table);
@@ -213,7 +202,7 @@ class GenerateCommand extends Command
         $databasePlatform->registerDoctrineTypeMapping('enum', 'string');
 
         $platformName = $databasePlatform->getName();
-        $customTypes = $this->laravel['config']->get("ide-helper.custom_db_types.{$platformName}", array());
+        $customTypes = $this->laravel['config']->get("ide-helper.custom_db_types.{$platformName}", []);
         foreach ($customTypes as $yourTypeName => $doctrineTypeName) {
             $databasePlatform->registerDoctrineTypeMapping($yourTypeName, $doctrineTypeName);
         }
@@ -245,53 +234,11 @@ class GenerateCommand extends Command
         }
     }
 
-
-    /**
-     * @param \Illuminate\Database\Eloquent\Model $model
-     */
-    protected function getPropertiesFromMethods($model)
-    {
-        $methods = get_class_methods($model);
-        if ($methods) {
-            foreach ($methods as $method) {
-                if (!method_exists('Illuminate\Database\Eloquent\Model', $method) && !Str::startsWith($method, 'get')) {
-                    //Use reflection to inspect the code, based on Illuminate/Support/SerializableClosure.php
-                    $reflection = new \ReflectionMethod($model, $method);
-                    $file = new \SplFileObject($reflection->getFileName());
-                    $file->seek($reflection->getStartLine() - 1);
-                    $code = '';
-                    while ($file->key() < $reflection->getEndLine()) {
-                        $code .= $file->current();
-                        $file->next();
-                    }
-                    $code = trim(preg_replace('/\s\s+/', '', $code));
-                    $begin = strpos($code, 'function(');
-                    $code = substr($code, $begin, strrpos($code, '}') - $begin + 1);
-                    foreach (array(
-                                 'belongsTo',
-                             ) as $relation) {
-                        $search = '$this->' . $relation . '(';
-                        if ($pos = stripos($code, $search)) {
-                            //Resolve the relation's model to a Relation object.
-                            $relationObj = $model->$method();
-                            if ($relationObj instanceof Relation) {
-                                $relatedModel = '\\' . get_class($relationObj->getRelated());
-                                $relatedObj = new $relatedModel;
-                                $property = $relationObj->getForeignKeyName();
-                                $this->setProperty($property, 'factory(' . get_class($relationObj->getRelated()) . '::class)->create()->' . $relatedObj->getKeyName());
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     /**
      * @param string $name
      * @param string|null $type
      */
-    protected function setProperty($name, $type = null)
+    protected function setProperty(string $name, $type = null): void
     {
         if ($type !== null && Str::startsWith($type, 'factory(')) {
             $this->properties[$name] = $type;
@@ -361,12 +308,54 @@ class GenerateCommand extends Command
         $this->properties[$name] = '$faker->word';
     }
 
+    /**
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @throws \ReflectionException
+     */
+    protected function getPropertiesFromMethods(Model $model)
+    {
+        $methods = get_class_methods($model);
+        if ($methods) {
+            foreach ($methods as $method) {
+                if (!method_exists('Illuminate\Database\Eloquent\Model', $method) && !Str::startsWith($method, 'get')) {
+                    //Use reflection to inspect the code, based on Illuminate/Support/SerializableClosure.php
+                    $reflection = new \ReflectionMethod($model, $method);
+                    $file = new \SplFileObject($reflection->getFileName());
+                    $file->seek($reflection->getStartLine() - 1);
+                    $code = '';
+                    while ($file->key() < $reflection->getEndLine()) {
+                        $code .= $file->current();
+                        $file->next();
+                    }
+                    $code = trim(preg_replace('/\s\s+/', '', $code));
+                    $begin = strpos($code, 'function(');
+                    $code = substr($code, $begin, strrpos($code, '}') - $begin + 1);
+                    foreach ([
+                                 'belongsTo',
+                             ] as $relation) {
+                        $search = '$this->' . $relation . '(';
+                        if ($pos = stripos($code, $search)) {
+                            //Resolve the relation's model to a Relation object.
+                            $relationObj = $model->$method();
+                            if ($relationObj instanceof Relation) {
+                                $relatedModel = '\\' . get_class($relationObj->getRelated());
+                                $relatedObj = new $relatedModel;
+                                $property = $relationObj->getForeignKeyName();
+                                $this->setProperty($property, 'factory(' . get_class($relationObj->getRelated()) . '::class)->create()->' . $relatedObj->getKeyName());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     /**
+     * Create factory
      * @param string $class
-     * @return string
+     * @throws \ReflectionException
      */
-    protected function createFactory($class)
+    protected function createFactory(string $class): string
     {
         $reflection = new \ReflectionClass($class);
 
@@ -378,4 +367,24 @@ class GenerateCommand extends Command
         return $content;
     }
 
+    /**
+     * Get the console command arguments.
+     */
+    protected function getArguments(): array
+    {
+        return [
+            ['model', InputArgument::OPTIONAL | InputArgument::IS_ARRAY, 'Which models to include', []],
+        ];
+    }
+
+    /**
+     * Get the console command options.
+     */
+    protected function getOptions(): array
+    {
+        return [
+            ['dir', 'D', InputOption::VALUE_OPTIONAL, 'The model directory', $this->dir],
+            ['force', 'F', InputOption::VALUE_NONE, 'Overwrite any existing model factory'],
+        ];
+    }
 }
