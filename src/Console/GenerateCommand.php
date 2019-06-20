@@ -277,7 +277,9 @@ class GenerateCommand extends Command
                             if ($relationObj instanceof Relation) {
                                 $relatedModel = '\\' . get_class($relationObj->getRelated());
                                 $relatedObj = new $relatedModel;
-                                $property = $relationObj->getForeignKeyName();
+                                $property = property_exists($relationObj, 'getForeignKeyName')
+                                    ? $relationObj->getForeignKeyName()
+                                    : $relationObj->getForeignKey();
                                 $this->setProperty($property, 'factory(' . get_class($relationObj->getRelated()) . '::class)->create()->' . $relatedObj->getKeyName());
                             }
                         }
