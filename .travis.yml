@@ -1,0 +1,20 @@
+---
+dist: xenial
+
+git:
+  quiet: true
+
+language: php
+php:
+  - '7.1'
+  - '7.2'
+  - '7.3'
+  - '7.4'
+
+before_script:
+  - sudo apt-get update -q
+  - sudo apt-get install -y curl
+
+script:
+  - curl -OL https://squizlabs.github.io/PHP_CodeSniffer/phpcs.phar
+  - php phpcs.phar src/
