@@ -252,36 +252,35 @@ class GenerateCommand extends Command
     protected function getPropertiesFromMethods($model)
     {
         $methods = get_class_methods($model);
-        if ($methods) {
-            foreach ($methods as $method) {
-                if (!method_exists('Illuminate\Database\Eloquent\Model', $method) && !Str::startsWith($method, 'get')) {
-                    //Use reflection to inspect the code, based on Illuminate/Support/SerializableClosure.php
-                    $reflection = new \ReflectionMethod($model, $method);
-                    $file = new \SplFileObject($reflection->getFileName());
-                    $file->seek($reflection->getStartLine() - 1);
-                    $code = '';
-                    while ($file->key() < $reflection->getEndLine()) {
-                        $code .= $file->current();
-                        $file->next();
-                    }
-                    $code = trim(preg_replace('/\s\s+/', '', $code));
-                    $begin = strpos($code, 'function(');
-                    $code = substr($code, $begin, strrpos($code, '}') - $begin + 1);
-                    foreach (array(
-                                 'belongsTo',
-                             ) as $relation) {
-                        $search = '$this->' . $relation . '(';
-                        if ($pos = stripos($code, $search)) {
-                            //Resolve the relation's model to a Relation object.
-                            $relationObj = $model->$method();
-                            if ($relationObj instanceof Relation) {
-                                $relatedModel = '\\' . get_class($relationObj->getRelated());
-                                $relatedObj = new $relatedModel;
-                                $property = property_exists($relationObj, 'getForeignKeyName')
-                                    ? $relationObj->getForeignKeyName()
-                                    : $relationObj->getForeignKey();
-                                $this->setProperty($property, 'factory(' . get_class($relationObj->getRelated()) . '::class)->create()->' . $relatedObj->getKeyName());
-                            }
+
+        foreach ($methods as $method) {
+            if (!method_exists('Illuminate\Database\Eloquent\Model', $method) && !Str::startsWith($method, 'get')) {
+                //Use reflection to inspect the code, based on Illuminate/Support/SerializableClosure.php
+                $reflection = new \ReflectionMethod($model, $method);
+                $file = new \SplFileObject($reflection->getFileName());
+                $file->seek($reflection->getStartLine() - 1);
+                $code = '';
+                while ($file->key() < $reflection->getEndLine()) {
+                    $code .= $file->current();
+                    $file->next();
+                }
+                $code = trim(preg_replace('/\s\s+/', '', $code));
+                $begin = strpos($code, 'function(');
+                $code = substr($code, $begin, strrpos($code, '}') - $begin + 1);
+                foreach (array(
+                             'belongsTo',
+                         ) as $relation) {
+                    $search = '$this->' . $relation . '(';
+                    if ($pos = stripos($code, $search)) {
+                        //Resolve the relation's model to a Relation object.
+                        $relationObj = $model->$method();
+                        if ($relationObj instanceof Relation) {
+                            $relatedModel = '\\' . get_class($relationObj->getRelated());
+                            $relatedObj = new $relatedModel;
+                            $property = property_exists($relationObj, 'getForeignKeyName')
+                                ? $relationObj->getForeignKeyName()
+                                : $relationObj->getForeignKey();
+                            $this->setProperty($property, 'factory(' . get_class($relationObj->getRelated()) . '::class)->create()->' . $relatedObj->getKeyName());
                         }
                     }
                 }
