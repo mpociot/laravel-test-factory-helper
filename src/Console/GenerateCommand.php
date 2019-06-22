@@ -280,7 +280,7 @@ class GenerateCommand extends Command
                             $property = method_exists($relationObj, 'getForeignKeyName')
                                 ? $relationObj->getForeignKeyName()
                                 : $relationObj->getForeignKey();
-                            $this->setProperty($property, 'factory(' . get_class($relationObj->getRelated()) . '::class)->create()->' . $relatedObj->getKeyName());
+                            $this->setProperty($property, 'factory(' . get_class($relationObj->getRelated()) . '::class)');
                         }
                     }
                 }
