@@ -80,7 +80,7 @@ class GenerateCommand extends Command
             $filename = 'database/factories/' . class_basename($model) . 'Factory.php';
 
             if ($this->files->exists($filename) && !$this->force) {
-                $this->warn('Model factory exists, use --force to overwrite: ' . $filename);
+                $this->line('<fg=yellow>Model factory exists, use --force to overwrite:</fg=yellow> ' . $filename);
 
                 continue;
             }
@@ -93,9 +93,9 @@ class GenerateCommand extends Command
 
             $written = $this->files->put($filename, $result);
             if ($written !== false) {
-                $this->info('Model factory created: ' . $filename);
+                $this->line('<info>Model factory created:</info> ' . $filename);
             } else {
-                $this->error('Failed to create model factory: ' . $filename);
+                $this->line('<error>Failed to create model factory:</error> ' . $filename);
             }
         }
     }
