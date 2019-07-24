@@ -339,7 +339,7 @@ class GenerateCommand extends Command
             'phone_number' => '$faker->phoneNumber',
             'postcode' => '$faker->postcode',
             'postal_code' => '$faker->postcode',
-            'remember_token' => 'Str::random(10)',
+            'remember_token' => '\Illuminate\Support\Str::random(10)',
             'slug' => '$faker->slug',
             'street' => '$faker->streetName',
             'address1' => '$faker->streetAddress',
