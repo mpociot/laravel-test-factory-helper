@@ -12,7 +12,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class GenerateCommand extends Command
 {
-
     /**
      * @var Filesystem $files
      */
@@ -48,7 +47,7 @@ class GenerateCommand extends Command
     /**
      * @var array
      */
-    protected $properties = [];
+    protected $properties = array();
 
     /**
      * @var
@@ -62,7 +61,7 @@ class GenerateCommand extends Command
     {
         parent::__construct();
         $this->files = $files;
-        $this->view  = $view;
+        $this->view = $view;
     }
 
     /**
@@ -72,8 +71,8 @@ class GenerateCommand extends Command
      */
     public function handle()
     {
-        \Doctrine\DBAL\Types\Type::addType("customEnum", "Mpociot\LaravelTestFactoryHelper\Types\EnumType");
-        $this->dir   = $this->option('dir');
+			  \Doctrine\DBAL\Types\Type::addType("customEnum", "Mpociot\LaravelTestFactoryHelper\Types\EnumType");
+        $this->dir = $this->option('dir');
         $this->force = $this->option('force');
 
         $models = $this->loadModels($this->argument('model'));
@@ -81,7 +80,7 @@ class GenerateCommand extends Command
         foreach ($models as $model) {
             $filename = 'database/factories/' . class_basename($model) . 'Factory.php';
 
-            if ($this->files->exists($filename) && ! $this->force) {
+            if ($this->files->exists($filename) && !$this->force) {
                 $this->line('<fg=yellow>Model factory exists, use --force to overwrite:</fg=yellow> ' . $filename);
 
                 continue;
@@ -110,9 +109,9 @@ class GenerateCommand extends Command
      */
     protected function getArguments()
     {
-        return [
-            ['model', InputArgument::OPTIONAL | InputArgument::IS_ARRAY, 'Which models to include', []],
-        ];
+        return array(
+            array('model', InputArgument::OPTIONAL | InputArgument::IS_ARRAY, 'Which models to include', array()),
+        );
     }
 
     /**
@@ -133,11 +132,10 @@ class GenerateCommand extends Command
         $output = '<?php' . "\n\n";
 
         $this->properties = [];
-        if ( ! class_exists($model)) {
+        if (!class_exists($model)) {
             if ($this->output->getVerbosity() >= OutputInterface::VERBOSITY_VERBOSE) {
                 $this->error("Unable to find '$model' class");
             }
-
             return false;
         }
 
@@ -145,7 +143,7 @@ class GenerateCommand extends Command
             // handle abstract classes, interfaces, ...
             $reflectionClass = new \ReflectionClass($model);
 
-            if ( ! $reflectionClass->isSubclassOf('Illuminate\Database\Eloquent\Model')) {
+            if (!$reflectionClass->isSubclassOf('Illuminate\Database\Eloquent\Model')) {
                 return false;
             }
 
@@ -153,7 +151,7 @@ class GenerateCommand extends Command
                 $this->comment("Loading model '$model'");
             }
 
-            if ( ! $reflectionClass->IsInstantiable()) {
+            if (!$reflectionClass->IsInstantiable()) {
                 // ignore abstract class or interface
                 return false;
             }
@@ -174,7 +172,7 @@ class GenerateCommand extends Command
 
     protected function loadModels($models = [])
     {
-        if ( ! empty($models)) {
+        if (!empty($models)) {
             return array_map(function ($name) {
                 if (strpos($name, '\\') !== false) {
                     return $name;
@@ -190,7 +188,7 @@ class GenerateCommand extends Command
 
 
         $dir = base_path($this->dir);
-        if ( ! file_exists($dir)) {
+        if (!file_exists($dir)) {
             return [];
         }
 
@@ -210,14 +208,13 @@ class GenerateCommand extends Command
      */
     protected function getPropertiesFromTable($model)
     {
-        $table            = $model->getConnection()->getTablePrefix() . $model->getTable();
-        $schema           = $model->getConnection()->getDoctrineSchemaManager($table);
+        $table = $model->getConnection()->getTablePrefix() . $model->getTable();
+        $schema = $model->getConnection()->getDoctrineSchemaManager($table);
         $databasePlatform = $schema->getDatabasePlatform();
-
         $databasePlatform->registerDoctrineTypeMapping('enum', 'customEnum');
 
         $platformName = $databasePlatform->getName();
-        $customTypes  = $this->laravel['config']->get("ide-helper.custom_db_types.{$platformName}", []);
+        $customTypes = $this->laravel['config']->get("ide-helper.custom_db_types.{$platformName}", array());
         foreach ($customTypes as $yourTypeName => $doctrineTypeName) {
             $databasePlatform->registerDoctrineTypeMapping($yourTypeName, $doctrineTypeName);
         }
@@ -237,13 +234,12 @@ class GenerateCommand extends Command
                 } else {
                     $type = $column->getType()->getName();
                 }
-                if ( ! ($model->incrementing && $model->getKeyName() === $name) &&
-                     $name !== $model::CREATED_AT &&
-                     $name !== $model::UPDATED_AT
+                if (!($model->incrementing && $model->getKeyName() === $name) &&
+                    $name !== $model::CREATED_AT &&
+                    $name !== $model::UPDATED_AT
                 ) {
-                    if ( ! method_exists($model, 'getDeletedAtColumn') ||
-                         (method_exists($model, 'getDeletedAtColumn') && $name !== $model->getDeletedAtColumn())) {
-                        $this->setProperty($table, $name, $type, $model);
+                    if (!method_exists($model, 'getDeletedAtColumn') || (method_exists($model, 'getDeletedAtColumn') && $name !== $model->getDeletedAtColumn())) {
+                        $this->setProperty($table, $name, $type);
                     }
                 }
             }
@@ -257,33 +253,33 @@ class GenerateCommand extends Command
     protected function getPropertiesFromMethods($model)
     {
         $methods = get_class_methods($model);
-        $table   = $model->getConnection()->getTablePrefix() . $model->getTable();
+				$table   = $model->getConnection()->getTablePrefix() . $model->getTable();
 
         foreach ($methods as $method) {
-            if ( ! method_exists('Illuminate\Database\Eloquent\Model', $method) && ! Str::startsWith($method, 'get')) {
+            if (!method_exists('Illuminate\Database\Eloquent\Model', $method) && !Str::startsWith($method, 'get')) {
                 //Use reflection to inspect the code, based on Illuminate/Support/SerializableClosure.php
                 $reflection = new \ReflectionMethod($model, $method);
-                $file       = new \SplFileObject($reflection->getFileName());
+                $file = new \SplFileObject($reflection->getFileName());
                 $file->seek($reflection->getStartLine() - 1);
                 $code = '';
                 while ($file->key() < $reflection->getEndLine()) {
                     $code .= $file->current();
                     $file->next();
                 }
-                $code  = trim(preg_replace('/\s\s+/', '', $code));
+                $code = trim(preg_replace('/\s\s+/', '', $code));
                 $begin = strpos($code, 'function(');
-                $code  = substr($code, $begin, strrpos($code, '}') - $begin + 1);
-                foreach ([
+                $code = substr($code, $begin, strrpos($code, '}') - $begin + 1);
+                foreach (array(
                              'belongsTo',
-                         ] as $relation) {
+                         ) as $relation) {
                     $search = '$this->' . $relation . '(';
                     if ($pos = stripos($code, $search)) {
                         //Resolve the relation's model to a Relation object.
                         $relationObj = $model->$method();
                         if ($relationObj instanceof Relation) {
                             $relatedModel = '\\' . get_class($relationObj->getRelated());
-                            $relatedObj   = new $relatedModel;
-                            $property     = method_exists($relationObj, 'getForeignKeyName')
+                            $relatedObj = new $relatedModel;
+                            $property = method_exists($relationObj, 'getForeignKeyName')
                                 ? $relationObj->getForeignKeyName()
                                 : $relationObj->getForeignKey();
                             $this->setProperty($table, $property, 'function () {
@@ -297,8 +293,7 @@ class GenerateCommand extends Command
     }
 
     /**
-     * @param string      $table
-     * @param string      $name
+     * @param string $name
      * @param string|null $type
      */
     protected function setProperty($table, $name, $type = null)
@@ -310,54 +305,54 @@ class GenerateCommand extends Command
         }
 
         $fakeableTypes = [
-            'string'     => '$faker->word',
-            'enum'       => '$faker->randomElement(' . $this->enumValues($table, $name) . ')',
-            'text'       => '$faker->text',
-            'date'       => '$faker->date()',
-            'time'       => '$faker->time()',
-            'guid'       => '$faker->word',
+						'enum' => '$faker->randomElement(' . $this->enumValues($table, $name) . ')',
+            'string' => '$faker->word',
+            'text' => '$faker->text',
+            'date' => '$faker->date()',
+            'time' => '$faker->time()',
+            'guid' => '$faker->word',
             'datetimetz' => '$faker->dateTime()',
-            'datetime'   => '$faker->dateTime()',
-            'integer'    => '$faker->randomNumber()',
-            'bigint'     => '$faker->randomNumber()',
-            'smallint'   => '$faker->randomNumber()',
-            'decimal'    => '$faker->randomFloat()',
-            'float'      => '$faker->randomFloat()',
-            'boolean'    => '$faker->boolean',
+            'datetime' => '$faker->dateTime()',
+            'integer' => '$faker->randomNumber()',
+            'bigint' => '$faker->randomNumber()',
+            'smallint' => '$faker->randomNumber()',
+            'decimal' => '$faker->randomFloat()',
+            'float' => '$faker->randomFloat()',
+            'boolean' => '$faker->boolean'
         ];
 
         $fakeableNames = [
-            'city'           => '$faker->city',
-            'company'        => '$faker->company',
-            'country'        => '$faker->country',
-            'description'    => '$faker->text',
-            'email'          => '$faker->safeEmail',
-            'first_name'     => '$faker->firstName',
-            'firstname'      => '$faker->firstName',
-            'guid'           => '$faker->uuid',
-            'last_name'      => '$faker->lastName',
-            'lastname'       => '$faker->lastName',
-            'lat'            => '$faker->latitude',
-            'latitude'       => '$faker->latitude',
-            'lng'            => '$faker->longitude',
-            'longitude'      => '$faker->longitude',
-            'name'           => '$faker->name',
-            'password'       => 'bcrypt($faker->password)',
-            'phone'          => '$faker->phoneNumber',
-            'phone_number'   => '$faker->phoneNumber',
-            'postcode'       => '$faker->postcode',
-            'postal_code'    => '$faker->postcode',
+            'city' => '$faker->city',
+            'company' => '$faker->company',
+            'country' => '$faker->country',
+            'description' => '$faker->text',
+            'email' => '$faker->safeEmail',
+            'first_name' => '$faker->firstName',
+            'firstname' => '$faker->firstName',
+            'guid' => '$faker->uuid',
+            'last_name' => '$faker->lastName',
+            'lastname' => '$faker->lastName',
+            'lat' => '$faker->latitude',
+            'latitude' => '$faker->latitude',
+            'lng' => '$faker->longitude',
+            'longitude' => '$faker->longitude',
+            'name' => '$faker->name',
+            'password' => 'bcrypt($faker->password)',
+            'phone' => '$faker->phoneNumber',
+            'phone_number' => '$faker->phoneNumber',
+            'postcode' => '$faker->postcode',
+            'postal_code' => '$faker->postcode',
             'remember_token' => 'Str::random(10)',
-            'slug'           => '$faker->slug',
-            'street'         => '$faker->streetName',
-            'address1'       => '$faker->streetAddress',
-            'address2'       => '$faker->secondaryAddress',
-            'summary'        => '$faker->text',
-            'url'            => '$faker->url',
-            'user_name'      => '$faker->userName',
-            'username'       => '$faker->userName',
-            'uuid'           => '$faker->uuid',
-            'zip'            => '$faker->postcode',
+            'slug' => '$faker->slug',
+            'street' => '$faker->streetName',
+            'address1' => '$faker->streetAddress',
+            'address2' => '$faker->secondaryAddress',
+            'summary' => '$faker->text',
+            'url' => '$faker->url',
+            'user_name' => '$faker->userName',
+            'username' => '$faker->userName',
+            'uuid' => '$faker->uuid',
+            'zip' => '$faker->postcode',
         ];
 
         if (isset($fakeableNames[$name])) {
@@ -374,8 +369,8 @@ class GenerateCommand extends Command
 
         $this->properties[$name] = '$faker->word';
     }
-
-    public static function enumValues($table, $name)
+		
+		public static function enumValues($table, $name)
     {
         $type = \Illuminate\Support\Facades\DB::select(\Illuminate\Support\Facades\DB::raw(
             'SHOW COLUMNS FROM ' . $table . ' WHERE Field = "' . $name . '"'))[0]->Type;
@@ -385,6 +380,7 @@ class GenerateCommand extends Command
 
         return "['" . implode("','", $values) . "']";
     }
+
 
     /**
      * @param string $class
