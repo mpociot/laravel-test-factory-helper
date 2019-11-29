@@ -72,6 +72,7 @@ class GenerateCommand extends Command
      */
     public function handle()
     {
+        \Doctrine\DBAL\Types\Type::addType("customEnum", "Mpociot\LaravelTestFactoryHelper\Types\EnumType");
         $this->dir   = $this->option('dir');
         $this->force = $this->option('force');
 
@@ -213,7 +214,6 @@ class GenerateCommand extends Command
         $schema           = $model->getConnection()->getDoctrineSchemaManager($table);
         $databasePlatform = $schema->getDatabasePlatform();
 
-        \Doctrine\DBAL\Types\Type::addType("customEnum", "Mpociot\LaravelTestFactoryHelper\Types\EnumType");
         $databasePlatform->registerDoctrineTypeMapping('enum', 'customEnum');
 
         $platformName = $databasePlatform->getName();
