@@ -9,6 +9,8 @@ use Illuminate\Support\Str;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Doctrine\DBAL\Types\Type;
+use Illuminate\Support\Facades\DB;
 
 class GenerateCommand extends Command
 {
@@ -71,7 +73,7 @@ class GenerateCommand extends Command
      */
     public function handle()
     {
-        \Doctrine\DBAL\Types\Type::addType("customEnum", "Mpociot\LaravelTestFactoryHelper\Types\EnumType");
+        Type::addType("customEnum", "Mpociot\LaravelTestFactoryHelper\Types\EnumType");
         $this->dir = $this->option('dir');
         $this->force = $this->option('force');
 
@@ -370,14 +372,13 @@ class GenerateCommand extends Command
         $this->properties[$name] = '$faker->word';
     }
 
-		public static function enumValues($table, $name)
+    public static function enumValues($table, $name)
     {
-        $dbRaw = \Illuminate\Support\Facades\DB::raw('SHOW COLUMNS FROM ' . $table . ' WHERE Field = "' . $name . '"');
-        $type = \Illuminate\Support\Facades\DB::select($dbRaw)[0]->Type;
+        $type = DB::select(DB::raw('SHOW COLUMNS FROM ' . $table . ' WHERE Field = "' . $name . '"'))[0]->Type;
 
         preg_match_all("/'([^']+)'/", $type, $matches);
 
-        $values = isset($matches[1]) ? $matches[1] : [];
+        $values = isset($matches[1]) ? $matches[1] : array();
 
         return "['" . implode("','", $values) . "']";
     }
