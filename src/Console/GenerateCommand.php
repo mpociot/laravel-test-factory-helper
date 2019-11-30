@@ -71,7 +71,7 @@ class GenerateCommand extends Command
      */
     public function handle()
     {
-			  \Doctrine\DBAL\Types\Type::addType("customEnum", "Mpociot\LaravelTestFactoryHelper\Types\EnumType");
+        \Doctrine\DBAL\Types\Type::addType("customEnum", "Mpociot\LaravelTestFactoryHelper\Types\EnumType");
         $this->dir = $this->option('dir');
         $this->force = $this->option('force');
 
@@ -253,7 +253,7 @@ class GenerateCommand extends Command
     protected function getPropertiesFromMethods($model)
     {
         $methods = get_class_methods($model);
-				$table   = $model->getConnection()->getTablePrefix() . $model->getTable();
+        $table   = $model->getConnection()->getTablePrefix() . $model->getTable();
 
         foreach ($methods as $method) {
             if (!method_exists('Illuminate\Database\Eloquent\Model', $method) && !Str::startsWith($method, 'get')) {
@@ -369,11 +369,12 @@ class GenerateCommand extends Command
 
         $this->properties[$name] = '$faker->word';
     }
-		
+
 		public static function enumValues($table, $name)
     {
-        $type = \Illuminate\Support\Facades\DB::select(\Illuminate\Support\Facades\DB::raw(
-            'SHOW COLUMNS FROM ' . $table . ' WHERE Field = "' . $name . '"'))[0]->Type;
+        $dbRaw = \Illuminate\Support\Facades\DB::raw('SHOW COLUMNS FROM ' . $table . ' WHERE Field = "' . $name . '"');
+        $type = \Illuminate\Support\Facades\DB::select($dbRaw)[0]->Type;
+
         preg_match_all("/'([^']+)'/", $type, $matches);
 
         $values = isset($matches[1]) ? $matches[1] : [];
