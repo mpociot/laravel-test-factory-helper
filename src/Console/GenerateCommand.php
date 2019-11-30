@@ -241,7 +241,7 @@ class GenerateCommand extends Command
                     $name !== $model::UPDATED_AT
                 ) {
                     if (!method_exists($model, 'getDeletedAtColumn') || (method_exists($model, 'getDeletedAtColumn') && $name !== $model->getDeletedAtColumn())) {
-                        $this->setProperty($table, $name, $type);
+                        $this->setProperty($name, $type, $table);
                     }
                 }
             }
@@ -255,7 +255,6 @@ class GenerateCommand extends Command
     protected function getPropertiesFromMethods($model)
     {
         $methods = get_class_methods($model);
-        $table   = $model->getConnection()->getTablePrefix() . $model->getTable();
 
         foreach ($methods as $method) {
             if (!method_exists('Illuminate\Database\Eloquent\Model', $method) && !Str::startsWith($method, 'get')) {
@@ -284,7 +283,7 @@ class GenerateCommand extends Command
                             $property = method_exists($relationObj, 'getForeignKeyName')
                                 ? $relationObj->getForeignKeyName()
                                 : $relationObj->getForeignKey();
-                            $this->setProperty($table, $property, 'function () {
+                            $this->setProperty($property, 'function () {
             return factory(' . get_class($relationObj->getRelated()) . '::class)->create()->' . $relatedObj->getKeyName() . ';
         }');
                         }
@@ -298,7 +297,7 @@ class GenerateCommand extends Command
      * @param string $name
      * @param string|null $type
      */
-    protected function setProperty($table, $name, $type = null)
+    protected function setProperty($name, $type = null, $table = null)
     {
         if ($type !== null && Str::startsWith($type, 'function (')) {
             $this->properties[$name] = $type;
@@ -374,13 +373,17 @@ class GenerateCommand extends Command
 
     public static function enumValues($table, $name)
     {
+        if ($table === null) {
+            return "[]";
+        }
+
         $type = DB::select(DB::raw('SHOW COLUMNS FROM ' . $table . ' WHERE Field = "' . $name . '"'))[0]->Type;
 
         preg_match_all("/'([^']+)'/", $type, $matches);
 
         $values = isset($matches[1]) ? $matches[1] : array();
 
-        return "['" . implode("','", $values) . "']";
+        return "['" . implode("', '", $values) . "']";
     }
 
 
