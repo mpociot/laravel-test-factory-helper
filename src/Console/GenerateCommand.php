@@ -2,15 +2,17 @@
 
 namespace Mpociot\LaravelTestFactoryHelper\Console;
 
+use Doctrine\DBAL\Types\Type;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Mpociot\LaravelTestFactoryHelper\Types\EnumType;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Doctrine\DBAL\Types\Type;
-use Illuminate\Support\Facades\DB;
+
 
 class GenerateCommand extends Command
 {
@@ -73,7 +75,7 @@ class GenerateCommand extends Command
      */
     public function handle()
     {
-        Type::addType('customEnum', \Mpociot\LaravelTestFactoryHelper\Types\EnumType::class);
+        Type::addType('customEnum', EnumType::class);
         $this->dir = $this->option('dir');
         $this->force = $this->option('force');
 
