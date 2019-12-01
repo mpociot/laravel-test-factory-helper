@@ -73,7 +73,7 @@ class GenerateCommand extends Command
      */
     public function handle()
     {
-        Type::addType("customEnum", "Mpociot\LaravelTestFactoryHelper\Types\EnumType");
+        Type::addType('customEnum', \Mpociot\LaravelTestFactoryHelper\Types\EnumType::class);
         $this->dir = $this->option('dir');
         $this->force = $this->option('force');
 
@@ -306,7 +306,7 @@ class GenerateCommand extends Command
         }
 
         $fakeableTypes = [
-						'enum' => '$faker->randomElement(' . $this->enumValues($table, $name) . ')',
+	    'enum' => '$faker->randomElement(' . $this->enumValues($table, $name) . ')',
             'string' => '$faker->word',
             'text' => '$faker->text',
             'date' => '$faker->date()',
