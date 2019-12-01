@@ -306,7 +306,7 @@ class GenerateCommand extends Command
         }
 
         $fakeableTypes = [
-	    'enum' => '$faker->randomElement(' . $this->enumValues($table, $name) . ')',
+            'enum' => '$faker->randomElement(' . $this->enumValues($table, $name) . ')',
             'string' => '$faker->word',
             'text' => '$faker->text',
             'date' => '$faker->date()',
