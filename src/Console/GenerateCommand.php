@@ -2,13 +2,17 @@
 
 namespace Mpociot\LaravelTestFactoryHelper\Console;
 
+use Doctrine\DBAL\Types\Type;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Mpociot\LaravelTestFactoryHelper\Types\EnumType;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+
 
 class GenerateCommand extends Command
 {
@@ -71,6 +75,7 @@ class GenerateCommand extends Command
      */
     public function handle()
     {
+        Type::addType('customEnum', EnumType::class);
         $this->dir = $this->option('dir');
         $this->force = $this->option('force');
 
@@ -210,7 +215,7 @@ class GenerateCommand extends Command
         $table = $model->getConnection()->getTablePrefix() . $model->getTable();
         $schema = $model->getConnection()->getDoctrineSchemaManager($table);
         $databasePlatform = $schema->getDatabasePlatform();
-        $databasePlatform->registerDoctrineTypeMapping('enum', 'string');
+        $databasePlatform->registerDoctrineTypeMapping('enum', 'customEnum');
 
         $platformName = $databasePlatform->getName();
         $customTypes = $this->laravel['config']->get("ide-helper.custom_db_types.{$platformName}", array());
@@ -238,7 +243,7 @@ class GenerateCommand extends Command
                     $name !== $model::UPDATED_AT
                 ) {
                     if (!method_exists($model, 'getDeletedAtColumn') || (method_exists($model, 'getDeletedAtColumn') && $name !== $model->getDeletedAtColumn())) {
-                        $this->setProperty($name, $type);
+                        $this->setProperty($name, $type, $table);
                     }
                 }
             }
@@ -294,7 +299,7 @@ class GenerateCommand extends Command
      * @param string $name
      * @param string|null $type
      */
-    protected function setProperty($name, $type = null)
+    protected function setProperty($name, $type = null, $table = null)
     {
         if ($type !== null && Str::startsWith($type, 'function (')) {
             $this->properties[$name] = $type;
@@ -303,6 +308,7 @@ class GenerateCommand extends Command
         }
 
         $fakeableTypes = [
+            'enum' => '$faker->randomElement(' . $this->enumValues($table, $name) . ')',
             'string' => '$faker->word',
             'text' => '$faker->text',
             'date' => '$faker->date()',
@@ -365,6 +371,21 @@ class GenerateCommand extends Command
         }
 
         $this->properties[$name] = '$faker->word';
+    }
+
+    public static function enumValues($table, $name)
+    {
+        if ($table === null) {
+            return "[]";
+        }
+
+        $type = DB::select(DB::raw('SHOW COLUMNS FROM ' . $table . ' WHERE Field = "' . $name . '"'))[0]->Type;
+
+        preg_match_all("/'([^']+)'/", $type, $matches);
+
+        $values = isset($matches[1]) ? $matches[1] : array();
+
+        return "['" . implode("', '", $values) . "']";
     }
 
 
