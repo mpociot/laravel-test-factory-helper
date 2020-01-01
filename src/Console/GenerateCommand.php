@@ -259,8 +259,8 @@ class GenerateCommand extends Command
         $methods = get_class_methods($model);
 
         foreach ($methods as $method) {
-            if (!method_exists('Illuminate\Database\Eloquent\Model', $method) && !Str::startsWith($method, 'get')) {
-                //Use reflection to inspect the code, based on Illuminate/Support/SerializableClosure.php
+            if (!Str::startsWith($method, 'get') && !method_exists('Illuminate\Database\Eloquent\Model', $method)) {
+                // Use reflection to inspect the code, based on Illuminate/Support/SerializableClosure.php
                 $reflection = new \ReflectionMethod($model, $method);
                 $file = new \SplFileObject($reflection->getFileName());
                 $file->seek($reflection->getStartLine() - 1);
@@ -272,22 +272,13 @@ class GenerateCommand extends Command
                 $code = trim(preg_replace('/\s\s+/', '', $code));
                 $begin = strpos($code, 'function(');
                 $code = substr($code, $begin, strrpos($code, '}') - $begin + 1);
-                foreach (array(
-                             'belongsTo',
-                         ) as $relation) {
+                foreach (['belongsTo'] as $relation) {
                     $search = '$this->' . $relation . '(';
                     if ($pos = stripos($code, $search)) {
-                        //Resolve the relation's model to a Relation object.
                         $relationObj = $model->$method();
                         if ($relationObj instanceof Relation) {
-                            $relatedModel = '\\' . get_class($relationObj->getRelated());
-                            $relatedObj = new $relatedModel;
-                            $property = method_exists($relationObj, 'getForeignKeyName')
-                                ? $relationObj->getForeignKeyName()
-                                : $relationObj->getForeignKey();
-                            $this->setProperty($property, 'function () {
-            return factory(' . get_class($relationObj->getRelated()) . '::class)->create()->' . $relatedObj->getKeyName() . ';
-        }');
+                            echo 'found method: ', $method, PHP_EOL;
+                            $this->setProperty($relationObj->getForeignKeyName(), 'factory(' . get_class($relationObj->getRelated()) . '::class)');
                         }
                     }
                 }
@@ -301,7 +292,7 @@ class GenerateCommand extends Command
      */
     protected function setProperty($name, $type = null, $table = null)
     {
-        if ($type !== null && Str::startsWith($type, 'function (')) {
+        if ($type !== null && Str::startsWith($type, 'factory(')) {
             $this->properties[$name] = $type;
 
             return;

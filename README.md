@@ -36,9 +36,7 @@ $factory->define(App\User::class, function (Faker\Generator $faker) {
         'username' => $faker->userName,
         'email' => $faker->safeEmail,
         'password' => bcrypt($faker->password),
-        'company_id' => function () {
-            return factory(App\Company::class)->create()->id;
-        },
+        'company_id' => factory(App\Company::class),
         'remember_token' => Str::random(10),
     ];
 });
