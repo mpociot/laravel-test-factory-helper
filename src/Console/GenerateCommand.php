@@ -277,7 +277,6 @@ class GenerateCommand extends Command
                     if ($pos = stripos($code, $search)) {
                         $relationObj = $model->$method();
                         if ($relationObj instanceof Relation) {
-                            echo 'found method: ', $method, PHP_EOL;
                             $this->setProperty($relationObj->getForeignKeyName(), 'factory(' . get_class($relationObj->getRelated()) . '::class)');
                         }
                     }
