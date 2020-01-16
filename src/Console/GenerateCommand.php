@@ -277,7 +277,7 @@ class GenerateCommand extends Command
                     if ($pos = stripos($code, $search)) {
                         $relationObj = $model->$method();
                         if ($relationObj instanceof Relation) {
-                            $this->setProperty($relationObj->getForeignKeyName(), 'factory(' . get_class($relationObj->getRelated()) . '::class)');
+                            $this->setProperty($relationObj->getForeignKeyName(), 'function () { return factory(' . get_class($relationObj->getRelated()) . '::class); }');
                         }
                     }
                 }
