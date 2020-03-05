@@ -13,7 +13,6 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-
 class GenerateCommand extends Command
 {
     /**
@@ -368,9 +367,11 @@ class GenerateCommand extends Command
         if ($table === null) {
             return "[]";
         }
-
-        $type = DB::select(DB::raw('SHOW COLUMNS FROM ' . $table . ' WHERE Field = "' . $name . '"'))[0]->Type;
-
+        if (env('DB_HOST') == 'postgres') {
+            $type = DB::select(DB::raw('SELECT column_name,data_type FROM information_schema.columns WHERE table_name = \'' . $table . '\' AND column_name = \'' . $name . '\''))[0]->data_type;
+        } else {
+            $type = DB::select(DB::raw('SHOW COLUMNS FROM ' . $table . ' WHERE Field = "' . $name . '"'))[0]->Type;
+        }
         preg_match_all("/'([^']+)'/", $type, $matches);
 
         $values = isset($matches[1]) ? $matches[1] : array();
@@ -394,5 +395,4 @@ class GenerateCommand extends Command
 
         return $content;
     }
-
 }
