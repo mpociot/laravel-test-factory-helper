@@ -243,7 +243,7 @@ class GenerateCommand extends Command
                     $name !== $model::UPDATED_AT
                 ) {
                     if (!method_exists($model, 'getDeletedAtColumn') || (method_exists($model, 'getDeletedAtColumn') && $name !== $model->getDeletedAtColumn())) {
-                        $this->setProperty($name, $type, $table);
+                        $this->setProperty($name, $type, $table, $database);
                     }
                 }
             }
@@ -289,7 +289,7 @@ class GenerateCommand extends Command
      * @param string $name
      * @param string|null $type
      */
-    protected function setProperty($name, $type = null, $table = null)
+    protected function setProperty($name, $type = null, $table = null, $database = null)
     {
         if ($type !== null && Str::startsWith($type, 'factory(')) {
             $this->properties[$name] = $type;
@@ -298,7 +298,7 @@ class GenerateCommand extends Command
         }
 
         $fakeableTypes = [
-            'enum' => '$faker->randomElement(' . $this->enumValues($table, $name) . ')',
+            'enum' => '$faker->randomElement(' . $this->enumValues($table, $name, $database) . ')',
             'string' => '$faker->word',
             'text' => '$faker->text',
             'date' => '$faker->date()',
@@ -363,10 +363,14 @@ class GenerateCommand extends Command
         $this->properties[$name] = '$faker->word';
     }
 
-    public static function enumValues($table, $name)
+    public static function enumValues($table, $name, $database = null)
     {
         if ($table === null) {
             return "[]";
+        }
+
+        if ($database !== null) {
+            $table = "$database.$table";
         }
 
         $type = DB::select(DB::raw('SHOW COLUMNS FROM ' . $table . ' WHERE Field = "' . $name . '"'))[0]->Type;
