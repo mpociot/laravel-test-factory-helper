@@ -243,7 +243,7 @@ class GenerateCommand extends Command
                     $name !== $model::UPDATED_AT
                 ) {
                     if (!method_exists($model, 'getDeletedAtColumn') || (method_exists($model, 'getDeletedAtColumn') && $name !== $model->getDeletedAtColumn())) {
-                        $this->setProperty($name, $type, $table);
+                        $this->setProperty($model, $name, $type, $table);
                     }
                 }
             }
@@ -277,7 +277,7 @@ class GenerateCommand extends Command
                     if ($pos = stripos($code, $search)) {
                         $relationObj = $model->$method();
                         if ($relationObj instanceof Relation) {
-                            $this->setProperty($relationObj->getForeignKeyName(), 'factory(' . get_class($relationObj->getRelated()) . '::class)');
+                            $this->setProperty($model, $relationObj->getForeignKeyName(), 'factory(' . get_class($relationObj->getRelated()) . '::class)');
                         }
                     }
                 }
@@ -289,30 +289,13 @@ class GenerateCommand extends Command
      * @param string $name
      * @param string|null $type
      */
-    protected function setProperty($name, $type = null, $table = null)
+    protected function setProperty($model, $name, $type = null, $table = null)
     {
         if ($type !== null && Str::startsWith($type, 'factory(')) {
             $this->properties[$name] = $type;
 
             return;
         }
-
-        $fakeableTypes = [
-            'enum' => '$faker->randomElement(' . $this->enumValues($table, $name) . ')',
-            'string' => '$faker->word',
-            'text' => '$faker->text',
-            'date' => '$faker->date()',
-            'time' => '$faker->time()',
-            'guid' => '$faker->word',
-            'datetimetz' => '$faker->dateTime()',
-            'datetime' => '$faker->dateTime()',
-            'integer' => '$faker->randomNumber()',
-            'bigint' => '$faker->randomNumber()',
-            'smallint' => '$faker->randomNumber()',
-            'decimal' => '$faker->randomFloat()',
-            'float' => '$faker->randomFloat()',
-            'boolean' => '$faker->boolean'
-        ];
 
         $fakeableNames = [
             'city' => '$faker->city',
@@ -354,6 +337,31 @@ class GenerateCommand extends Command
             return;
         }
 
+        $enumValues = $this->enumValues($model, $table, $name);
+
+        $fakeableTypes = [
+            'enum' => '$faker->randomElement(' . $enumValues . ')',
+            'string' => '$faker->word',
+            'text' => '$faker->text',
+            'date' => '$faker->date()',
+            'time' => '$faker->time()',
+            'guid' => '$faker->word',
+            'datetimetz' => '$faker->dateTime()',
+            'datetime' => '$faker->dateTime()',
+            'integer' => '$faker->randomNumber()',
+            'bigint' => '$faker->randomNumber()',
+            'smallint' => '$faker->randomNumber()',
+            'decimal' => '$faker->randomFloat()',
+            'float' => '$faker->randomFloat()',
+            'boolean' => '$faker->boolean'
+        ];
+
+        if ($enumValues !== '[]') {
+            $this->properties[$name] = $fakeableTypes['enum'];
+
+            return;
+        }
+
         if (isset($fakeableTypes[$type])) {
             $this->properties[$name] = $fakeableTypes[$type];
 
@@ -363,19 +371,42 @@ class GenerateCommand extends Command
         $this->properties[$name] = '$faker->word';
     }
 
-    public static function enumValues($table, $name)
+    public function enumValues($model, $table, $name)
     {
         if ($table === null) {
             return "[]";
         }
 
-        $type = DB::select(DB::raw('SHOW COLUMNS FROM ' . $table . ' WHERE Field = "' . $name . '"'))[0]->Type;
+        $driver = $model->getConnection()->getDriverName();
+        $values = null;
 
-        preg_match_all("/'([^']+)'/", $type, $matches);
+        if ($driver === 'mysql') {
+            $type = DB::select(DB::raw('SHOW COLUMNS FROM ' . $table . ' WHERE Field = "' . $name . '"'))[0]->Type;
 
-        $values = isset($matches[1]) ? $matches[1] : array();
+            preg_match_all("/'([^']+)'/", $type, $matches);
 
-        return "['" . implode("', '", $values) . "']";
+            $values = isset($matches[1]) ? $matches[1] : array();
+
+            return "['" . implode("', '", $values) . "']";
+        } else if ($driver === 'pgsql') {
+            $types = DB::select(DB::raw("
+                select matches[1]
+                from pg_constraint, regexp_matches(consrc, '''(.+?)''', 'g') matches
+                where contype = 'c'
+                    and conname = '{$table}_{$name}_check'
+                    and conrelid = 'public.{$table}'::regclass;
+            "));
+
+            $values = array();
+
+            foreach ($types as $type){
+                $values[] = $type->matches;
+            }
+        }
+
+        return $values
+            ? "['" . implode("', '", $values) . "']"
+            : "[]";
     }
 
 
