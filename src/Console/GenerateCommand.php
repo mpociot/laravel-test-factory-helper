@@ -369,7 +369,7 @@ class GenerateCommand extends Command
             return "[]";
         }
 
-        $type = DB::select(DB::raw('SHOW COLUMNS FROM ' . $table . ' WHERE Field = "' . $name . '"'))[0]->Type;
+        $type = DB::select(DB::raw('SHOW COLUMNS FROM `' . $table . '` WHERE Field = "' . $name . '"'))[0]->Type;
 
         preg_match_all("/'([^']+)'/", $type, $matches);
 
