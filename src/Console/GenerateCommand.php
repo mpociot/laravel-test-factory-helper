@@ -381,26 +381,28 @@ class GenerateCommand extends Command
         $values = null;
 
         if ($driver === 'mysql') {
-            $type = DB::select(DB::raw('SHOW COLUMNS FROM ' . $table . ' WHERE Field = "' . $name . '"'))[0]->Type;
+            $type = DB::connection($model->getConnectionName())
+                ->select(DB::raw('SHOW COLUMNS FROM ' . $table . ' WHERE Field = "' . $name . '"'))[0]->Type;
 
             preg_match_all("/'([^']+)'/", $type, $matches);
 
-            $values = isset($matches[1]) ? $matches[1] : array();
-
-            return "['" . implode("', '", $values) . "']";
+            $values = isset($matches[1]) ? $matches[1] : null;
         } else if ($driver === 'pgsql') {
-            $types = DB::select(DB::raw("
-                select matches[1]
-                from pg_constraint, regexp_matches(consrc, '''(.+?)''', 'g') matches
-                where contype = 'c'
-                    and conname = '{$table}_{$name}_check'
-                    and conrelid = 'public.{$table}'::regclass;
-            "));
+            $types = DB::connection($model->getConnectionName())
+                ->select(DB::raw("
+                    select matches[1]
+                    from pg_constraint, regexp_matches(consrc, '''(.+?)''', 'g') matches
+                    where contype = 'c'
+                        and conname = '{$table}_{$name}_check'
+                        and conrelid = 'public.{$table}'::regclass;
+                "));
 
-            $values = array();
+            if (count($types)) {
+                $values = array();
 
-            foreach ($types as $type){
-                $values[] = $type->matches;
+                foreach ($types as $type){
+                    $values[] = $type->matches;
+                }
             }
         }
 
