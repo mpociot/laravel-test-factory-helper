@@ -391,7 +391,7 @@ class GenerateCommand extends Command
             $types = DB::connection($model->getConnectionName())
                 ->select(DB::raw("
                     select matches[1]
-                    from pg_constraint, regexp_matches(consrc, '''(.+?)''', 'g') matches
+                    from pg_constraint, regexp_matches(pg_get_constraintdef(\"oid\"), '''(.+?)''', 'g') matches
                     where contype = 'c'
                         and conname = '{$table}_{$name}_check'
                         and conrelid = 'public.{$table}'::regclass;
