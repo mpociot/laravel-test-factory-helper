@@ -1,14 +1,18 @@
 {
     "name": "mpociot/laravel-test-factory-helper",
     "description": "Generate Laravel test factories from your existing models",
-    "keywords": ["Laravel", "Tests", "Factory"],
+    "keywords": [
+        "Laravel",
+        "Tests",
+        "Factory"
+    ],
     "license": "MIT",
     "require": {
         "php": "^7.2.5",
-        "illuminate/support": "^6.0|^7.0",
-        "illuminate/console": "^6.0|^7.0",
-        "illuminate/filesystem": "^6.0|^7.0",
-        "doctrine/dbal": "^2.9"
+        "illuminate/support": "^6.0|^7.0|^8.0",
+        "illuminate/console": "^6.0|^7.0|^8.0",
+        "illuminate/filesystem": "^6.0|^7.0|^8.0",
+        "doctrine/dbal": "^2.9|^2.10"
     },
     "autoload": {
         "psr-4": {
