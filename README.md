@@ -30,16 +30,35 @@ class User extends Model {
 #### Factory Result
 
 ```php
-$factory->define(App\User::class, function (Faker\Generator $faker) {
-    return [
-        'name' => $faker->name,
-        'username' => $faker->userName,
-        'email' => $faker->safeEmail,
-        'password' => bcrypt($faker->password),
-        'company_id' => factory(App\Company::class),
-        'remember_token' => Str::random(10),
-    ];
-});
+
+
+class UserFactory extends Factory
+{
+    /**
+     * The name of the factory's corresponding model.
+     *
+     * @var string
+     */
+    protected $model = App\User::class;
+
+    /**
+     * Define the model's default state.
+     *
+     * @return array
+     */
+    public function definition()
+    {
+        return [
+            'name' => $faker->name,
+            'username' => $faker->userName,
+            'email' => $faker->safeEmail,
+            'password' => bcrypt($faker->password),
+            'company_id' => factory(App\Company::class),
+            'remember_token' => Str::random(10),
+        ];
+    }
+}
+
 ```
 
 

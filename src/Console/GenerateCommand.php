@@ -298,54 +298,54 @@ class GenerateCommand extends Command
         }
 
         $fakeableTypes = [
-            'enum' => '$faker->randomElement(' . $this->enumValues($table, $name) . ')',
-            'string' => '$faker->word',
-            'text' => '$faker->text',
-            'date' => '$faker->date()',
-            'time' => '$faker->time()',
-            'guid' => '$faker->word',
-            'datetimetz' => '$faker->dateTime()',
-            'datetime' => '$faker->dateTime()',
-            'integer' => '$faker->randomNumber()',
-            'bigint' => '$faker->randomNumber()',
-            'smallint' => '$faker->randomNumber()',
-            'decimal' => '$faker->randomFloat()',
-            'float' => '$faker->randomFloat()',
-            'boolean' => '$faker->boolean'
+            'enum' => '$this->faker->randomElement(' . $this->enumValues($table, $name) . ')',
+            'string' => '$this->faker->word',
+            'text' => '$this->faker->text',
+            'date' => '$this->faker->date()',
+            'time' => '$this->faker->time()',
+            'guid' => '$this->faker->word',
+            'datetimetz' => '$this->faker->dateTime()',
+            'datetime' => '$this->faker->dateTime()',
+            'integer' => '$this->faker->randomNumber()',
+            'bigint' => '$this->faker->randomNumber()',
+            'smallint' => '$this->faker->randomNumber()',
+            'decimal' => '$this->faker->randomFloat()',
+            'float' => '$this->faker->randomFloat()',
+            'boolean' => '$this->faker->boolean'
         ];
 
         $fakeableNames = [
-            'city' => '$faker->city',
-            'company' => '$faker->company',
-            'country' => '$faker->country',
-            'description' => '$faker->text',
-            'email' => '$faker->safeEmail',
-            'first_name' => '$faker->firstName',
-            'firstname' => '$faker->firstName',
-            'guid' => '$faker->uuid',
-            'last_name' => '$faker->lastName',
-            'lastname' => '$faker->lastName',
-            'lat' => '$faker->latitude',
-            'latitude' => '$faker->latitude',
-            'lng' => '$faker->longitude',
-            'longitude' => '$faker->longitude',
-            'name' => '$faker->name',
-            'password' => 'bcrypt($faker->password)',
-            'phone' => '$faker->phoneNumber',
-            'phone_number' => '$faker->phoneNumber',
-            'postcode' => '$faker->postcode',
-            'postal_code' => '$faker->postcode',
+            'city' => '$this->faker->city',
+            'company' => '$this->faker->company',
+            'country' => '$this->faker->country',
+            'description' => '$this->faker->text',
+            'email' => '$this->faker->safeEmail',
+            'first_name' => '$this->faker->firstName',
+            'firstname' => '$this->faker->firstName',
+            'guid' => '$this->faker->uuid',
+            'last_name' => '$this->faker->lastName',
+            'lastname' => '$this->faker->lastName',
+            'lat' => '$this->faker->latitude',
+            'latitude' => '$this->faker->latitude',
+            'lng' => '$this->faker->longitude',
+            'longitude' => '$this->faker->longitude',
+            'name' => '$this->faker->name',
+            'password' => 'bcrypt($this->faker->password)',
+            'phone' => '$this->faker->phoneNumber',
+            'phone_number' => '$this->faker->phoneNumber',
+            'postcode' => '$this->faker->postcode',
+            'postal_code' => '$this->faker->postcode',
             'remember_token' => 'Str::random(10)',
-            'slug' => '$faker->slug',
-            'street' => '$faker->streetName',
-            'address1' => '$faker->streetAddress',
-            'address2' => '$faker->secondaryAddress',
-            'summary' => '$faker->text',
-            'url' => '$faker->url',
-            'user_name' => '$faker->userName',
-            'username' => '$faker->userName',
-            'uuid' => '$faker->uuid',
-            'zip' => '$faker->postcode',
+            'slug' => '$this->faker->slug',
+            'street' => '$this->faker->streetName',
+            'address1' => '$this->faker->streetAddress',
+            'address2' => '$this->faker->secondaryAddress',
+            'summary' => '$this->faker->text',
+            'url' => '$this->faker->url',
+            'user_name' => '$this->faker->userName',
+            'username' => '$this->faker->userName',
+            'uuid' => '$this->faker->uuid',
+            'zip' => '$this->faker->postcode',
         ];
 
         if (isset($fakeableNames[$name])) {
@@ -360,7 +360,7 @@ class GenerateCommand extends Command
             return;
         }
 
-        $this->properties[$name] = '$faker->word';
+        $this->properties[$name] = '$this->faker->word';
     }
 
     public static function enumValues($table, $name)
