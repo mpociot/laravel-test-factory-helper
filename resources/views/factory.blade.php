@@ -22,9 +22,9 @@ class {{$reflection->getShortName()}}Factory extends Factory
     {
         $faker = $this->faker;
         return [
-        @foreach($properties as $name => $property)
+@foreach($properties as $name => $property)
             '{{$name}}' => {!! $property !!},
-        @endforeach
+@endforeach
         ];
     }
 }
