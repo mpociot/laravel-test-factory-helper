@@ -20,10 +20,11 @@ class {{$reflection->getShortName()}}Factory extends Factory
      */
     public function definition()
     {
+        $faker = $this->faker;
         return [
-            @foreach($properties as $name => $property)
-                    '{{$name}}' => {!! $property !!},
-            @endforeach
-                ];
+        @foreach($properties as $name => $property)
+            '{{$name}}' => {!! $property !!},
+        @endforeach
+        ];
     }
 }
