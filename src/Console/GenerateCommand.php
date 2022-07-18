@@ -31,7 +31,7 @@ class GenerateCommand extends Command
     /**
      * @var string
      */
-    protected $dir = 'app';
+    protected $dir = 'app/Models';
 
     /** @var \Illuminate\Contracts\View\Factory */
     protected $view;
@@ -173,7 +173,7 @@ class GenerateCommand extends Command
         return $output;
     }
 
-
+    // TODO: look in app/Models instead of app for the models (Laravel 8 default)
     protected function loadModels($models = [])
     {
         if (!empty($models)) {
